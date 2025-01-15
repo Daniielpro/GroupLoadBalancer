@@ -24,12 +24,12 @@ jobs:
  # Construcción de la imagen Docker con la etiqueta 'latest'
     - name: Build Docker image
       run: |
-        docker build --label "commit_sha=${{ github.sha }}" -t cristinacolcha/:latest .
+        docker build --label "commit_sha=${{ github.sha }}" -t cristinacolcha/mi-app:latest .
 
     # Push de la imagen Docker a Docker Hub con la etiqueta 'latest'
     - name: Push Docker image to Docker Hub
       run: |
-        docker push cristinacolcha/:latest
+        docker push cristinacolcha/mi-app:latest
 
   deploy-aws:
     needs: build-and-push
