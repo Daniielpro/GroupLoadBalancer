@@ -29,7 +29,7 @@ jobs:
     # Push de la imagen Docker a Docker Hub con la etiqueta 'latest'
     - name: Push Docker image to Docker Hub
       run: |
-        docker push cristinacolcha/saludo:latest
+        docker push cristinacolcha/:latest
 
   deploy-aws:
     needs: build-and-push
