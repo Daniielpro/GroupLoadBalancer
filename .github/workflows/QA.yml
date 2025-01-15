@@ -21,10 +21,15 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         
 
-    - name: Build and Push Docker Image
+ # Construcción de la imagen Docker con la etiqueta 'latest'
+    - name: Build Docker image
       run: |
-        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/my-html-app:latest .
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-html-app:latest
+        docker build --label "commit_sha=${{ github.sha }}" -t cristinacolcha/:latest .
+
+    # Push de la imagen Docker a Docker Hub con la etiqueta 'latest'
+    - name: Push Docker image to Docker Hub
+      run: |
+        docker push cristinacolcha/saludo:latest
 
   deploy-aws:
     needs: build-and-push
