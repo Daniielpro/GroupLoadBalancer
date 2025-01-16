@@ -12,3 +12,4 @@ EXPOSE 3000
 
 # Comando para ejecutar el servidor
 CMD ["node", "server.js"]
+ 
