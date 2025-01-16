@@ -13,64 +13,137 @@ jobs:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Construcción de la imagen Docker con la etiqueta basada en el SHA del commit
-      - name: Build Docker image
-        run: |
-          docker build --label "commit_sha=${{ github.sha }}" -t cristinacolcha/mi-app:${{ github.sha }} .
+    # Construcción de la imagen Docker con la etiqueta 'latest'
+    - name: Build Docker image
+      run: |
+        docker build --label "commit_sha=${{ github.sha }}" -t cristinacolcha/mi-app:latest .
 
-      # Push de la imagen Docker a Docker Hub con la etiqueta específica
-      - name: Push Docker image to Docker Hub
-        run: |
-          docker push cristinacolcha/mi-app:${{ github.sha }}
+    # Push de la imagen Docker a Docker Hub con la etiqueta 'latest'
+    - name: Push Docker image to Docker Hub
+      run: |
+        docker push cristinacolcha/mi-app:latest
 
   deploy-aws:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
-
-    strategy:
-      matrix:
-        instance: [MAIN1, MAIN2, MAIN3, MAIN4]
 
     steps:
-      - name: Set permissions for private key
-        run: |
-          echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
-          chmod 600 key.pem
+    - name: Set permissions for private key
+      run: |
+        echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
+        chmod 600 key.pem
 
-      # Actualizar y configurar Docker en la instancia EC2
-      - name: Update system and install Docker (Instance ${{ matrix.instance }})
-        run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets['AWS_EC2_HOST_' + matrix.instance] }} << 'EOF'
-          sudo yum update -y
-          if ! command -v docker &> /dev/null
-          then
-            echo "Docker not found, installing..."
-            sudo yum install -y docker
-            sudo systemctl start docker
-            sudo systemctl enable docker 
-          else
-            echo "Docker is already installed."
-          fi
+    # Update and configure the first instance
+    - name: Update system and install Docker (Instance 1)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN1 }} << 'EOF'
+        sudo yum update -y
+        if ! command -v docker &> /dev/null
+        then
+          echo "Docker not found, installing..."
+          sudo yum install -y docker
           sudo systemctl start docker
           sudo systemctl enable docker
-          EOF
+        else
+          echo "Docker is already installed."
+        fi
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        EOF
 
-      # Desplegar el contenedor Docker en la instancia EC2
-      - name: Deploy Docker Container (Instance ${{ matrix.instance }})
-        run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets['AWS_EC2_HOST_' + matrix.instance] }} << 'EOF'
-          sudo docker stop mi-app || true
-          sudo docker rm mi-app || true
-          sudo docker pull cristinacolcha/mi-app:${{ github.sha }}
-          sudo docker run -d -p 8080:8080 --name mi-app cristinacolcha/mi-app:${{ github.sha }}
-          EOF
+    - name: Deploy Docker Container (Instance 1)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN1 }} << 'EOF'
+        sudo docker stop mi-app || true
+        sudo docker rm mi-app || true
+        sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        EOF
+
+    # Update and configure the second instance
+    - name: Update system and install Docker (Instance 2)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN2 }} << 'EOF'
+        sudo yum update -y
+        if ! command -v docker &> /dev/null
+        then
+          echo "Docker not found, installing..."
+          sudo yum install -y docker
+          sudo systemctl start docker
+          sudo systemctl enable docker
+        else
+          echo "Docker is already installed."
+        fi
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        EOF
+
+    - name: Deploy Docker Container (Instance 2)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN2 }} << 'EOF'
+        sudo docker stop mi-app || true
+        sudo docker rm mi-app || true
+        sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        EOF
+    # Update and configure the third instance
+    - name: Update system and install Docker (Instance 3)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN3 }} << 'EOF'
+        sudo yum update -y
+        if ! command -v docker &> /dev/null
+        then
+          echo "Docker not found, installing..."
+          sudo yum install -y docker
+          sudo systemctl start docker
+          sudo systemctl enable docker
+        else
+          echo "Docker is already installed."
+        fi
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        EOF
+
+    - name: Deploy Docker Container (Instance 2)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN3 }} << 'EOF'
+        sudo docker stop mi-app || true
+        sudo docker rm mi-app || true
+        sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        EOF
+    # Update and configure the four instance
+    - name: Update system and install Docker (Instance 4)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN4 }} << 'EOF'
+        sudo yum update -y
+        if ! command -v docker &> /dev/null
+        then
+          echo "Docker not found, installing..."
+          sudo yum install -y docker
+          sudo systemctl start docker
+          sudo systemctl enable docker
+        else
+          echo "Docker is already installed."
+        fi
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        EOF
+
+    - name: Deploy Docker Container (Instance 4)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN4 }} << 'EOF'
+        sudo docker stop mi-app || true
+        sudo docker rm mi-app || true
+        sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        EOF
