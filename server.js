@@ -4,7 +4,7 @@ const http = require('http');
 // Configura el servidor
 const server = http.createServer((req, res) => {
     // Configura el encabezado de la respuesta
-    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.writeHead(200, { 'Content-Type': 'text/html' }); 
 
     // Define el contenido HTML con estilos
     const htmlContent = `
@@ -72,7 +72,7 @@ const server = http.createServer((req, res) => {
 });
 
 // Configura el puerto del servidor
-const PORT = 3000;
+const PORT = 8080;
 server.listen(PORT, () => {
     console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
 });
