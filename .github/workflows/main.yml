@@ -57,7 +57,7 @@ jobs:
             echo "Docker not found, installing..."
             sudo yum install -y docker
             sudo systemctl start docker
-            sudo systemctl enable docker
+            sudo systemctl enable docker 
           else
             echo "Docker is already installed."
           fi
