@@ -43,7 +43,7 @@ jobs:
           head: QA         # Rama de origen (QA)
           title: "Automated PR from QA to Main"
           body: "This is an automated PR created from the QA branch to main after the latest push."
-          draft: false     # Si lo quieres como borrador, cambia a `true`
+          draft: true     # Si lo quieres como borrador, cambia a `true`
 
   deploy-aws:
     needs: build-and-push
