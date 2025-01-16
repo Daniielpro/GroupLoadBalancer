@@ -33,7 +33,7 @@ jobs:
 
   deploy-aws:
     needs: build-and-push
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest 
 
     steps:
     - name: Set permissions for private key
@@ -62,10 +62,10 @@ jobs:
     - name: Deploy Docker Container (Instance 1)
       run: |
         ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA1 }} << 'EOF'
-        sudo docker stop my-html-app || true
-        sudo docker rm my-html-app || true
-        sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-html-app:latest
-        sudo docker run -d -p 8080:80 --name my-html-app ${{ secrets.DOCKERHUB_USERNAME }}/my-html-app:latest
+        sudo docker stop mi-app || true
+        sudo docker rm mi-app || true
+        sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mi-app:latest
+        sudo docker run -d -p 8080:80 --name mi-app ${{ secrets.DOCKERHUB_USERNAME }}/mi-app:latest
         EOF
 
     # Update and configure the second instance
@@ -89,8 +89,8 @@ jobs:
     - name: Deploy Docker Container (Instance 2)
       run: |
         ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA2 }} << 'EOF'
-        sudo docker stop my-html-app || true
-        sudo docker rm my-html-app || true
-        sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-html-app:latest
-        sudo docker run -d -p 8080:80 --name my-html-app ${{ secrets.DOCKERHUB_USERNAME }}/my-html-app:latest
+        sudo docker stop mi-app || true
+        sudo docker rm mi-app || true
+        sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/mi-app:latest
+        sudo docker run -d -p 8080:80 --name mi-app ${{ secrets.DOCKERHUB_USERNAME }}/mi-app:latest
         EOF
