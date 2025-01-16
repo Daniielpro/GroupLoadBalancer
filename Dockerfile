@@ -8,8 +8,8 @@ WORKDIR /app
 COPY . .
 
 # Expone el puerto en el que el servidor se ejecutará
-EXPOSE 3000
+EXPOSE 8080
 
-# Comando para ejecutar el servidor
+# Comando para ejecutar el servidor 
 CMD ["node", "server.js"]
  
