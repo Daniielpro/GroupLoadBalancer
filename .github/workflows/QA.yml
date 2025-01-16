@@ -35,13 +35,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Create a new branch for the PR
+        run: |
+          NEW_BRANCH="pr-${{ github.run_id }}"
+          git checkout -b $NEW_BRANCH
+          git push origin $NEW_BRANCH
+
       - name: Create Pull Request from QA to Main
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }} 
           base: main       # Rama de destino (main)
-          branch: QA         # Rama de origen (QA)
-          title: "Automated PR from QA to Main"
+          branch: $NEW_BRANCH  # Rama de origen (nueva rama creada)
+          title: "Automated PR from QA to Main - Run ${{ github.run_id }}"
           body: "This is an automated PR created from the QA branch to main after the latest push."
           draft: false     # Si lo quieres como borrador, cambia a `true`
 
