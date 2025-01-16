@@ -40,7 +40,7 @@ create-pull-request:
       - name: Create Pull Request from QA to Main
         uses: peter-evans/create-pull-request@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }} 
           base: main       # Rama de destino (main)
           head: QA         # Rama de origen (QA)
           title: "Automated PR from QA to Main"
