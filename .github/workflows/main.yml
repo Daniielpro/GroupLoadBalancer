@@ -1,9 +1,10 @@
-name: CI/CD for Docker Image Deployment
+name: Build and Deploy
 
 on:
+  push:
+    branches: [ "QA" ]
   pull_request:
-    types:
-      - closed
+    branches: [ "main" ]
 
 jobs:
   build-and-push:
@@ -21,50 +22,77 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
+    # Construcción de la imagen Docker con la etiqueta 'latest'
     - name: Build Docker image
       run: |
         docker build --label "commit_sha=${{ github.sha }}" -t cristinacolcha/mi-app:latest .
 
+    # Push de la imagen Docker a Docker Hub con la etiqueta 'latest'
     - name: Push Docker image to Docker Hub
       run: |
         docker push cristinacolcha/mi-app:latest
-  # Trabajo 2: Desplegar en múltiples instancias EC2
-  deploy:
-    name: Deploy Docker Container to EC2 Instances
+
+  deploy-aws:
+    needs: build-and-push
     runs-on: ubuntu-latest
-    needs: update_docker_image
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
 
     steps:
-      # Paso 1: Configurar la clave SSH
-      - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh  # Crear el directorio .ssh si no existe
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa  # Guardar la clave SSH en el archivo id_rsa
-          chmod 600 ~/.ssh/id_rsa  # Asegurar que la clave privada tenga los permisos correctos
+    - name: Set permissions for private key
+      run: |
+        echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
+        chmod 600 key.pem
 
-      # Paso 2: Desplegar en múltiples instancias EC2
-      - name: Deploy to EC2 Instance 1
-        uses: appleboy/ssh-action@v1.1.0
-        with:
-          host: ${{ secrets.EC2_INSTANCE_3 }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          script: |
-            docker stop html-container || true
-            docker rm html-container || true
-            docker pull dayanara1898/html-project:latest
-            docker run -d --name html-container -p 80:80 dayanara1898/html-project:latest
+    # Update and configure the first instance
+    - name: Update system and install Docker (Instance 1)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA }} << 'EOF'
+        sudo yum update -y
+        if ! command -v docker &> /dev/null
+        then
+          echo "Docker not found, installing..."
+          sudo yum install -y docker
+          sudo systemctl start docker
+          sudo systemctl enable docker
+        else
+          echo "Docker is already installed."
+        fi
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        EOF
 
-      - name: Deploy to EC2 Instance 2
-        uses: appleboy/ssh-action@v0.1.6
-        with:
-          host: ${{ secrets.EC2_INSTANCE_4 }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          script: |
-            docker stop html-container || true
-            docker rm html-container || true
-            docker pull dayanara1898/html-project:latest
-            docker run -d --name html-container -p 80:80 dayanara1898/html-project:latest
+    - name: Deploy Docker Container (Instance 1)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA }} << 'EOF'
+        sudo docker stop mi-app || true
+        sudo docker rm mi-app || true
+        sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        EOF
+
+    # Update and configure the second instance
+    - name: Update system and install Docker (Instance 2)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA }} << 'EOF'
+        sudo yum update -y
+        if ! command -v docker &> /dev/null
+        then
+          echo "Docker not found, installing..."
+          sudo yum install -y docker
+          sudo systemctl start docker
+          sudo systemctl enable docker
+        else
+          echo "Docker is already installed."
+        fi
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        EOF
+
+    - name: Deploy Docker Container (Instance 2)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA2 }} << 'EOF'
+        sudo docker stop mi-app || true
+        sudo docker rm mi-app || true
+        sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        EOF
