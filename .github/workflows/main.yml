@@ -46,7 +46,7 @@ jobs:
     # Update and configure the first instance
     - name: Update system and install Docker (Instance 1)
       run: |
-        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN1 }} << 'EOF'
         sudo yum update -y
         if ! command -v docker &> /dev/null
         then
@@ -63,7 +63,7 @@ jobs:
 
     - name: Deploy Docker Container (Instance 1)
       run: |
-        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN1 }} << 'EOF'
         sudo docker stop mi-app || true
         sudo docker rm mi-app || true
         sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
@@ -73,7 +73,7 @@ jobs:
     # Update and configure the second instance
     - name: Update system and install Docker (Instance 2)
       run: |
-        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN2 }} << 'EOF'
         sudo yum update -y
         if ! command -v docker &> /dev/null
         then
@@ -90,7 +90,59 @@ jobs:
 
     - name: Deploy Docker Container (Instance 2)
       run: |
-        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA2 }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN2 }} << 'EOF'
+        sudo docker stop mi-app || true
+        sudo docker rm mi-app || true
+        sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        EOF
+    # Update and configure the third instance
+    - name: Update system and install Docker (Instance 3)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN3 }} << 'EOF'
+        sudo yum update -y
+        if ! command -v docker &> /dev/null
+        then
+          echo "Docker not found, installing..."
+          sudo yum install -y docker
+          sudo systemctl start docker
+          sudo systemctl enable docker
+        else
+          echo "Docker is already installed."
+        fi
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        EOF
+
+    - name: Deploy Docker Container (Instance 3)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN3 }} << 'EOF'
+        sudo docker stop mi-app || true
+        sudo docker rm mi-app || true
+        sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
+        EOF
+    # Update and configure the four instance
+    - name: Update system and install Docker (Instance 4)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN4 }} << 'EOF'
+        sudo yum update -y
+        if ! command -v docker &> /dev/null
+        then
+          echo "Docker not found, installing..."
+          sudo yum install -y docker
+          sudo systemctl start docker
+          sudo systemctl enable docker
+        else
+          echo "Docker is already installed."
+        fi
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        EOF
+
+    - name: Deploy Docker Container (Instance 4)
+      run: |
+        ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN4 }} << 'EOF'
         sudo docker stop mi-app || true
         sudo docker rm mi-app || true
         sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
