@@ -28,7 +28,7 @@ jobs:
       run: |
         docker push cristinacolcha/mi-app:latest
 
- create-pull-request:
+  create-pull-request:
     runs-on: ubuntu-latest
     needs: build-and-push
     steps:
@@ -59,6 +59,7 @@ jobs:
           title: "Automated PR from QA to Main"
           body: "This is an automated PR created from the QA branch to main after the latest push."
           draft: false     # PR no será un borrador
+
   deploy-aws:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -89,7 +90,7 @@ jobs:
           # Deploy the latest Docker image
           sudo docker stop my-html-app || true
           sudo docker rm my-html-app || true
-          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-html-app:latest
-          sudo docker run -d -p 8080:80 --name my-html-app ${{ secrets.DOCKERHUB_USERNAME }}/my-html-app:latest
+          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/my-html-app:latest
+          sudo docker run -d -p 8080:80 --name my-html-app ${{ secrets.DOCKER_USERNAME }}/my-html-app:latest
           EOF
         done
