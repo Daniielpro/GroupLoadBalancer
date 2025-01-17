@@ -1,11 +1,9 @@
 name: Build and Deploy
 
 on:
-  workflow_run:
-    workflows:
-      - Build and Push Docker Images QA
-    types:
-      - completed
+    push:
+        branches:
+            - main
 
 jobs:
   build-and-push:
