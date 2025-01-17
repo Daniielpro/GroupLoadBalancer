@@ -23,15 +23,13 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # Construcción de la imagen Docker con la etiqueta 'latest'
     - name: Build Docker image
       run: |
-        docker build --label "commit_sha=${{ github.sha }}" -t cristinacolcha/mi-app:latest .
+        docker build --label "commit_sha=${{ github.sha }}" -t ${{ secrets.DOCKER_USERNAME }}/mi-app:latest .
 
-    # Push de la imagen Docker a Docker Hub con la etiqueta 'latest'
     - name: Push Docker image to Docker Hub
       run: |
-        docker push cristinacolcha/mi-app:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
 
   deploy-aws:
     needs: build-and-push
@@ -43,7 +41,7 @@ jobs:
         echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
         chmod 600 key.pem
 
-    # Update and configure the first instance
+    # Instancia 1
     - name: Update system and install Docker (Instance 1)
       run: |
         ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN1 }} << 'EOF'
@@ -70,7 +68,7 @@ jobs:
         sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
         EOF
 
-    # Update and configure the second instance
+    # Instancia 2
     - name: Update system and install Docker (Instance 2)
       run: |
         ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN2 }} << 'EOF'
@@ -96,7 +94,8 @@ jobs:
         sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
         sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
         EOF
-    # Update and configure the third instance
+
+    # Instancia 3
     - name: Update system and install Docker (Instance 3)
       run: |
         ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN3 }} << 'EOF'
@@ -114,7 +113,7 @@ jobs:
         sudo systemctl enable docker
         EOF
 
-    - name: Deploy Docker Container (Instance 2)
+    - name: Deploy Docker Container (Instance 3)
       run: |
         ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN3 }} << 'EOF'
         sudo docker stop mi-app || true
@@ -122,7 +121,8 @@ jobs:
         sudo docker pull ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
         sudo docker run -d -p 8080:8080 --name mi-app ${{ secrets.DOCKER_USERNAME }}/mi-app:latest
         EOF
-    # Update and configure the four instance
+
+    # Instancia 4
     - name: Update system and install Docker (Instance 4)
       run: |
         ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_MAIN4 }} << 'EOF'
